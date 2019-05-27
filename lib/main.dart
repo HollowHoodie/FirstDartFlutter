@@ -1,63 +1,77 @@
+import 'package:first_dart_flutter/widgets/get_data_button.dart';
 import 'package:flutter/material.dart';
-import 'package:english_words/english_words.dart';
+import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
-void main() => runApp(MyApp());
+Future<Post> fetchPost() async {
+  final response =
+      await http.get('https://jsonplaceholder.typicode.com/posts/1');
+  if (response.statusCode == 200) {
+    return Post.fromJson(json.decode(response.body));
+  } else {
+    throw Exception('Failed to load post');
+  }
+}
 
-class MyApp extends StatelessWidget {
+class Post {
+  final int userId;
+  final int id;
+  final String title;
+  final String body;
+
+  Post({this.userId, this.id, this.title, this.body});
+
+  factory Post.fromJson(Map<String, dynamic> json) {
+    return Post(
+      userId: json['userId'],
+      id: json['id'],
+      title: json['title'],
+      body: json['body'],
+    );
+  }
+}
+
+void main() => runApp(MainPage(post: fetchPost()));
+
+class MainPage extends StatelessWidget {
+  final Future<Post> post;
+  final String title = 'First dart web';
+  MainPage({Key key, this.post}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'First dart flutter',
+      title: title,
+      theme: ThemeData(
+        brightness: Brightness.dark,
+        primaryColor: Colors.black,
+        accentColor: Colors.cyan[600],
+        fontFamily: 'Montserrat',
+        textTheme: TextTheme(
+          headline: TextStyle(fontSize: 72.0, fontWeight: FontWeight.bold),
+          title: TextStyle(fontSize: 36.0, fontStyle: FontStyle.italic),
+          body1: TextStyle(fontSize: 14.0, fontFamily: 'Hind'),
+        ),
+      ),
       home: Scaffold(
         appBar: AppBar(
-          title: Text('First dart flutter'),
+          title: Text(title),
         ),
-        body: Center(
-          child: RandomWords(),
-        ),
-      ),
-    );
-  }
-}
-
-class RandomWords extends StatefulWidget {
-  @override
-  RandomWordsState createState() => RandomWordsState();
-}
-
-class RandomWordsState extends State<RandomWords> {
-  final _suggestions = <WordPair>[];
-  final _biggerFont = const TextStyle(fontSize: 18.0);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Startup Name Generator'),
-      ),
-      body: _buildSuggestions(),
-    );
-  }
-
-  Widget _buildSuggestions() {
-    return ListView.builder(
-        padding: const EdgeInsets.all(16.0),
-        itemBuilder: /*1*/ (context, i) {
-          if (i.isOdd) return Divider(); /*2*/
-
-          final index = i ~/ 2; /*3*/
-          if (index >= _suggestions.length) {
-            _suggestions.addAll(generateWordPairs().take(10)); /*4*/
-          }
-          return _buildRow(_suggestions[index]);
-        });
-  }
-
-  Widget _buildRow(WordPair pair) {
-    return ListTile(
-      title: Text(
-        pair.asPascalCase,
-        style: _biggerFont,
+        body: Center(child: new GetDataButton()),
+        // body: Center(
+        //   child: FutureBuilder<Post>(
+        //     future: post,
+        //     builder: (context, snapshot) {
+        //       if (snapshot.hasData) {
+        //         return Text(snapshot.data.title);
+        //       } else if (snapshot.hasError) {
+        //         return Text("${snapshot.error}");
+        //       }
+        //       return CircularProgressIndicator();
+        //     },
+        //   ),
+        // ),
       ),
     );
   }
